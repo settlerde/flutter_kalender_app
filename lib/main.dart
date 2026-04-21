@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'stateless.dart';
+import 'calender_page.dart';
 
 void main() {
   runApp(
@@ -26,6 +26,9 @@ class _CalendarAppState extends State<CalendarApp> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isWideScreen = screenWidth > 600;
+
     final List<Widget> pages = [
       const Center(child: Text('Home Page')),
       CalendarPage(displayDate: _selectedDate),
@@ -73,7 +76,21 @@ class _CalendarAppState extends State<CalendarApp> {
         ],
       ),
 
-      body: pages[_currentIndex],
+      body: isWideScreen
+          ? Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: CalendarPage(displayDate: _selectedDate),
+                ),
+                VerticalDivider(width: 2),
+                Expanded(
+                  flex: 1,
+                  child: Center(child: Text('Historical Data')),
+                ),
+              ],
+            )
+          : pages[_currentIndex],
 
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.greenAccent,
