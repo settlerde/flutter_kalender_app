@@ -1,101 +1,135 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'event_page.dart';
 
-class CalendarPage extends StatefulWidget {
+class CalendarWidget extends StatelessWidget {
   final DateTime displayDate;
-  const CalendarPage({super.key, required this.displayDate});
+  final Function(int) onDayTap;
 
-  @override
-  State<CalendarPage> createState() => _CalendarPageState();
-}
+  const CalendarWidget({
+    super.key,
+    required this.displayDate,
+    required this.onDayTap,
+  });
 
-class _CalendarPageState extends State<CalendarPage> {
-  String _eventText = "Klick auf dem Tag, um die Fakten zu erfahren.";
-  bool _isLoading = false;
-
-  Future<void> _fetchEvent(int month, int day) async {
-    setState(() => _isLoading = true);
-
-    try {
-      final url = Uri.parse(
-        'https://de.wikipedia.org/api/rest_v1/feed/onthisday/events/${month}/${day}',
-      );
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        setState(() {
-          _eventText = response.body;
-        });
-      }
-    } catch (e) {
-      setState(
-        () => _eventText =
-            "Downloadfehler: Überprüfen Sie Ihre Internetverbindung.",
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  String _getMonthName(int month) {
+    const names = [
+      "Januar",
+      "Februar",
+      "März",
+      "April",
+      "Mai",
+      "Juni",
+      "Juli",
+      "August",
+      "September",
+      "Oktober",
+      "November",
+      "Dezember",
+    ];
+    return names[month - 1];
   }
 
   @override
   Widget build(BuildContext context) {
-    int daysInMonth = DateTime(
-      widget.displayDate.year,
-      widget.displayDate.month + 1,
+    final int daysInMonth = DateTime(
+      displayDate.year,
+      displayDate.month + 1,
       0,
     ).day;
-    int firstWeekday = DateTime(
-      widget.displayDate.year,
-      widget.displayDate.month,
+    final int firstWeekday = DateTime(
+      displayDate.year,
+      displayDate.month,
       1,
     ).weekday;
+    final DateTime now = DateTime.now();
+    final List<String> weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
     return Column(
       children: [
-        SizedBox(
-          height: 300,
+        const Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            "Wähle einen Tag",
+            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Text(
+            "${_getMonthName(displayDate.month)} ${displayDate.year}",
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+            ),
+          ),
+        ),
+        Row(
+          children: weekDays
+              .map(
+                (d) => Expanded(
+                  child: Center(
+                    child: Text(
+                      d,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: (d == "Sa" || d == "So")
+                            ? Colors.red
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+        const Divider(),
+        Expanded(
           child: GridView.count(
             crossAxisCount: 7,
             children: [
               for (int i = 1; i < firstWeekday; i++) const SizedBox(),
               for (int day = 1; day <= daysInMonth; day++)
-                InkWell(
-                  onTap: () => _fetchEvent(widget.displayDate.month, day),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black12),
-                    ),
-                    child: Center(child: Text("$day")),
-                  ),
+                Builder(
+                  builder: (context) {
+                    final DateTime date = DateTime(
+                      displayDate.year,
+                      displayDate.month,
+                      day,
+                    );
+                    final bool isWeekend = date.weekday > 5;
+                    final bool isToday =
+                        day == now.day &&
+                        displayDate.month == now.month &&
+                        displayDate.year == now.year;
+                    return InkWell(
+                      onTap: () => onDayTap(day),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black12),
+                          color: isToday
+                              ? Colors.blueAccent
+                              : (isWeekend
+                                    ? Colors.red.withOpacity(0.05)
+                                    : Colors.transparent),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "$day",
+                            style: TextStyle(
+                              color: isToday
+                                  ? Colors.white
+                                  : (isWeekend ? Colors.red : Colors.black),
+                              fontWeight: isToday
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
             ],
-          ),
-        ),
-
-        const Divider(),
-
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const Text(
-                  "Historisches Ereignis dieses Tages:",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 10),
-                if (_isLoading) const CircularProgressIndicator(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Text(
-                      _eventText,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ],

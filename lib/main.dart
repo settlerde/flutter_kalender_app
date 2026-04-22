@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'calender_page.dart';
+import 'event_page.dart';
+import 'responsive_layout.dart';
 
 void main() {
   runApp(
-    const MaterialApp(home: CalendarApp(), debugShowCheckedModeBanner: false),
+    const MaterialApp(debugShowCheckedModeBanner: false, home: CalendarApp()),
   );
 }
 
@@ -16,98 +20,124 @@ class CalendarApp extends StatefulWidget {
 
 class _CalendarAppState extends State<CalendarApp> {
   int _currentIndex = 0;
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedMonth = DateTime.now();
+  List<String> _historicalEvents = ["Wähle ein Datum im Kalender aus"];
+  bool _isLoading = false;
 
-  void _onTabTapped(int index) {
+  Future<void> _fetchEvent(int month, int day) async {
     setState(() {
-      _currentIndex = index;
+      _isLoading = true;
+      if (MediaQuery.of(context).size.width <= 800) _currentIndex = 2;
     });
+
+    try {
+      final url = Uri.parse(
+        'https://de.wikipedia.org/api/rest_v1/feed/onthisday/events/$month/$day',
+      );
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List allEvents = data['events'] ?? [];
+        setState(() {
+          _historicalEvents = allEvents
+              .take(5)
+              .map((e) => e['text'].toString())
+              .toList();
+        });
+      }
+    } catch (e) {
+      setState(() => _historicalEvents = ["Fehler beim Laden."]);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    bool isWideScreen = screenWidth > 600;
+    final now = DateTime.now();
+    final String heuteStr = "${now.day}.${now.month}.${now.year}";
 
-    final List<Widget> pages = [
-      const Center(child: Text('Home Page')),
-      CalendarPage(displayDate: _selectedDate),
-      const Center(child: Text('Historical Page')),
-    ];
+    Widget homePage = Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.today, size: 80, color: Colors.blueAccent),
+          const Text("Heute ist der:", style: TextStyle(fontSize: 18)),
+          Text(
+            heuteStr,
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+
+    Widget calWidget = CalendarWidget(
+      displayDate: _selectedMonth,
+      onDayTap: (day) => _fetchEvent(_selectedMonth.month, day),
+    );
+
+    Widget histWidget = HistoricalWidget(
+      events: _historicalEvents,
+      isLoading: _isLoading,
+    );
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.greenAccent,
-        title: const Text('Calendar App'),
+        title: const Text("Zeitmaschine"),
         actions: [
           IconButton(
-            icon: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.yellowAccent,
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => setState(
+              () => _selectedMonth = DateTime(
+                _selectedMonth.year,
+                _selectedMonth.month - 1,
               ),
-              child: const Icon(Icons.arrow_back),
             ),
-            onPressed: () {
-              setState(() {
-                _selectedDate = DateTime(
-                  _selectedDate.year,
-                  _selectedDate.month - 1,
-                );
-              });
-            },
           ),
           IconButton(
-            icon: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.yellowAccent,
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () => setState(
+              () => _selectedMonth = DateTime(
+                _selectedMonth.year,
+                _selectedMonth.month + 1,
               ),
-              child: const Icon(Icons.arrow_forward),
             ),
-            onPressed: () {
-              setState(() {
-                _selectedDate = DateTime(
-                  _selectedDate.year,
-                  _selectedDate.month + 1,
-                );
-              });
-            },
           ),
         ],
       ),
-
-      body: isWideScreen
-          ? Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: CalendarPage(displayDate: _selectedDate),
+      body: ResponsiveLayout(
+        mobileBody: IndexedStack(
+          index: _currentIndex,
+          children: [homePage, calWidget, histWidget],
+        ),
+        desktopBody: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Center(child: SizedBox(width: 700, child: calWidget)),
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(flex: 1, child: histWidget),
+          ],
+        ),
+      ),
+      bottomNavigationBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_month),
+                  label: 'Kalender',
                 ),
-                VerticalDivider(width: 2),
-                Expanded(
-                  flex: 1,
-                  child: Center(child: Text('Historical Data')),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.history_edu),
+                  label: 'Historie',
                 ),
               ],
-            )
-          : pages[_currentIndex],
-
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.greenAccent,
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historical',
-          ),
-        ],
-      ),
+            ),
     );
   }
 }

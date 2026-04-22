@@ -1,45 +1,44 @@
 import 'package:flutter/material.dart';
 
-class EventDetailPage extends StatelessWidget {
-  final String eventText;
-  final DateTime date;
+class HistoricalWidget extends StatelessWidget {
+  final List<String> events;
+  final bool isLoading;
 
-  const EventDetailPage({
+  const HistoricalWidget({
     super.key,
-    required this.eventText,
-    required this.date,
+    required this.events,
+    required this.isLoading,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Event Details')),
-      backgroundColor: Colors.lightBlueAccent,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "${date.day}.${date.month}.${date.year}",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(eventText, style: TextStyle(fontSize: 18)),
-                ),
-              ),
-            ],
+    if (isLoading) return const Center(child: CircularProgressIndicator());
+
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            "Top 5 Ereignisse",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-      ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: events.length,
+            itemBuilder: (context, index) => Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: ListTile(
+                leading: CircleAvatar(child: Text("${index + 1}")),
+                title: Text(
+                  events[index],
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
