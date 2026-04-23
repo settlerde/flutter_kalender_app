@@ -83,27 +83,32 @@ class _CalendarAppState extends State<CalendarApp> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Zeitmaschine"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () => setState(
-              () => _selectedMonth = DateTime(
-                _selectedMonth.year,
-                _selectedMonth.month - 1,
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () => setState(
+                () => _selectedMonth = DateTime(
+                  _selectedMonth.year,
+                  _selectedMonth.month - 1,
+                ),
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: () => setState(
-              () => _selectedMonth = DateTime(
-                _selectedMonth.year,
-                _selectedMonth.month + 1,
+            const Text("Zeitmaschine"),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () => setState(
+                () => _selectedMonth = DateTime(
+                  _selectedMonth.year,
+                  _selectedMonth.month + 1,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        actions: [],
       ),
       body: ResponsiveLayout(
         mobileBody: IndexedStack(
