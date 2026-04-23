@@ -88,7 +88,11 @@ class _CalendarAppState extends State<CalendarApp> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.chevron_left),
+              icon: const Icon(
+                Icons.chevron_left,
+                size: 30,
+                color: Colors.blueAccent,
+              ),
               onPressed: () => setState(
                 () => _selectedMonth = DateTime(
                   _selectedMonth.year,
@@ -96,9 +100,16 @@ class _CalendarAppState extends State<CalendarApp> {
                 ),
               ),
             ),
-            const Text("Zeitmaschine"),
+            const Text(
+              "Zeitmaschine",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             IconButton(
-              icon: const Icon(Icons.chevron_right),
+              icon: const Icon(
+                Icons.chevron_right,
+                size: 30,
+                color: Colors.blueAccent,
+              ),
               onPressed: () => setState(
                 () => _selectedMonth = DateTime(
                   _selectedMonth.year,
